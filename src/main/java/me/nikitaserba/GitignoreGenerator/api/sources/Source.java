@@ -20,6 +20,8 @@
 
 package me.nikitaserba.GitignoreGenerator.api.sources;
 
+import me.nikitaserba.GitignoreGenerator.api.templates.TemplateType;
+
 /**
  * Store information about a source (url, file, etc.),
  * that will be used for parsing a template.
@@ -31,17 +33,23 @@ package me.nikitaserba.GitignoreGenerator.api.sources;
  */
 public final class Source {
     protected Class<? extends GitignoreSource> gitignoreSource;
+    protected TemplateType type;
     protected String name;
     protected String data;
 
-    public Source(String name, String data, Class<? extends GitignoreSource> gitignoreSource) {
+    public Source(String name, String data, TemplateType type, Class<? extends GitignoreSource> gitignoreSource) {
         this.gitignoreSource = gitignoreSource;
+        this.type = type;
         this.name = name;
         this.data = data;
     }
 
     public Class<? extends GitignoreSource> getGitignoreSource() {
         return gitignoreSource;
+    }
+
+    public TemplateType getType() {
+        return type;
     }
 
     public String getName() {
