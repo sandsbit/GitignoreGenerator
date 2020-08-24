@@ -20,32 +20,35 @@
 
 package me.nikitaserba.GitignoreGenerator.api.sources;
 
-import me.nikitaserba.GitignoreGenerator.api.templates.GitignoreTemplate;
-
 /**
- * General interface for all classes, that provide
- * .gitignore file templates.
+ * Store information about a source (url, file, etc.),
+ * that will be used for parsing a template.
  *
- * @version 1.0
+ * Source data (file, url, etc.) is stored in field `data` and
+ * template name is stored in field `name`.
+ *
+ * Class is read-only.
  */
-public interface GitignoreSource {
+public final class Source {
+    protected Class<? extends GitignoreSource> gitignoreSource;
+    protected String name;
+    protected String data;
 
-    /**
-     * Return source name (e.g. "github/.gitignore parser" or "file template parser"
-     *
-     * @return full source name
-     */
-    String getName();
+    public Source(String name, String data, Class<? extends GitignoreSource> gitignoreSource) {
+        this.gitignoreSource = gitignoreSource;
+        this.name = name;
+        this.data = data;
+    }
 
-    /**
-     * Get all available sources (URLs, file paths, etc.)
-     *
-     * @return list of `Source` objects which contain all available sources.
-     */
-    Source[] getAllSources();
+    public Class<? extends GitignoreSource> getGitignoreSource() {
+        return gitignoreSource;
+    }
 
-    GitignoreTemplate parse(String source);
-    GitignoreTemplate parse(Source source);
-    GitignoreTemplate[] parseAll();
+    public String getName() {
+        return name;
+    }
 
+    public String getData() {
+        return data;
+    }
 }
