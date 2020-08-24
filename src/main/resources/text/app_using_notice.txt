@@ -1,0 +1,2 @@
+# This .gitignore is generated with GitignoreGenerator
+# https://github.com/sandsbit/GitignoreGenerator/
