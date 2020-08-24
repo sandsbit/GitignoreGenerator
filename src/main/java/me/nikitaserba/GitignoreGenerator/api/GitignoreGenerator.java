@@ -33,9 +33,8 @@ import java.io.OutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Main class of GitignoreGenerator API.
@@ -108,11 +107,12 @@ final public class GitignoreGenerator {
         }
     }
 
-    protected HashSet<Source> templateSources;  // store all templates that will be used to generate .gitignore
+    protected List<Source> templateSources;  // store all templates that will be used to generate .gitignore
 
     public GitignoreGenerator() throws IOException, GitignoreSourceLoadException {
         loadAppUsageNotice();
         loadGitignoreSources();
+        this.templateSources = new ArrayList<>();
     }
 
     public GitignoreGenerator(String customHeader) throws IOException, GitignoreSourceLoadException {
@@ -120,6 +120,7 @@ final public class GitignoreGenerator {
         loadGitignoreSources();
         this.customHeader = customHeader;
         this.useCustomHeader = true;
+        this.templateSources = new ArrayList<>();
     }
 
     public GitignoreGenerator(String header, String headerDescription)
@@ -129,6 +130,7 @@ final public class GitignoreGenerator {
         this.header = header;
         this.headerDescription = headerDescription;
         this.useCustomHeader = false;
+        this.templateSources = new ArrayList<>();
     }
 
     public String getCustomHeader() {
@@ -154,22 +156,54 @@ final public class GitignoreGenerator {
         return headerDescription;
     }
 
+    private Set<Source> allSources;
+
     /**
      * Get all sources from all loaded .gitignore Sources
      *
-     * @return array of all sources
+     * @return unmodifiable set of all sources
      */
-    public Source[] getAllSources() {
-        throw new UnsupportedOperationException("Not implemented");
+    public Set<Source> getAllSources() {
+        if (allSources != null)
+            return Collections.unmodifiableSet(allSources);
+
+        allSources = new HashSet<>();
+        for (GitignoreSource gitignoreSource : gitignoreSources) {
+            allSources.addAll(gitignoreSource.getAllSources());
+        }
+        return Collections.unmodifiableSet(allSources);
     }
+
+    private Map<TemplateType, Set<Source>> allSourcesByType;
 
     /**
      * Get all sources with certain type from all loaded .gitignore Sources
      *
-     * @return array of all sources with given type
+     * @return unmodifiable set of all sources with given type
      */
-    public Source[] getAllSourcesByType(TemplateType type) {
-        throw new UnsupportedOperationException("Not implemented");
+    public Set<Source> getAllSourcesByType(TemplateType type) {
+        if (allSourcesByType != null && allSourcesByType.containsKey(type))
+            return Collections.unmodifiableSet(allSourcesByType.get(type));
+
+        if (allSources != null) {
+            if (allSourcesByType == null)
+                allSourcesByType = new EnumMap<>(TemplateType.class);
+
+            Set<Source> sourcesByGivenType = allSources.stream()
+                    .filter(src -> src.getType() == type)
+                    .collect(Collectors.toSet());
+            allSourcesByType.put(type, sourcesByGivenType);
+
+            return Collections.unmodifiableSet(sourcesByGivenType);
+        }
+
+        HashSet<Source> sourcesByGivenType = new HashSet<>();
+
+        for (GitignoreSource gitignoreSource : gitignoreSources) {
+            sourcesByGivenType.addAll(gitignoreSource.getSourcesByType(type));
+        }
+
+        return Collections.unmodifiableSet(sourcesByGivenType);
     }
 
     /**
@@ -179,7 +213,7 @@ final public class GitignoreGenerator {
      * @param pos position after whick source should be implaced.
      */
     public void loadTemplate(Source source, int pos) {
-        throw new UnsupportedOperationException("Not implemented");
+        templateSources.add(pos, source);
     }
 
     /**
@@ -188,7 +222,7 @@ final public class GitignoreGenerator {
      * @param source source to be added to templates list.
      */
     public void loadTemplate(Source source) {
-        throw new UnsupportedOperationException("Not implemented");
+        templateSources.add(source);
     }
 
     /**
@@ -197,7 +231,7 @@ final public class GitignoreGenerator {
      * @param i index of template to be removed.
      */
     public void removeTemplateAt(int i) {
-        throw new UnsupportedOperationException("Not implemented");
+        templateSources.remove(i);
     }
 
     /**
@@ -206,25 +240,27 @@ final public class GitignoreGenerator {
      * @param source template source to be removed.
      */
     public void removeTemplate(Source source) {
-        throw new UnsupportedOperationException("Not implemented");
+        templateSources.remove(source);
     }
 
     /**
      * Get all template sources from list of template sources.
      * 
-     * @return set of all template sources.
+     * @return unmodifiable list of all template sources.
      */
-    public Set<Source[]> getAllTemplates() {
-        throw new UnsupportedOperationException("Not implemented");
+    public List<Source> getAllTemplates() {
+        return Collections.unmodifiableList(templateSources);
     }
 
     /**
      * Get all template sources with certain type from list of template sources.
      *
-     * @return set of all template sources with given type.
+     * @return unmodifiable list all template sources with given type.
      */
-    public Set<Source[]> getAllTemplatesByType(TemplateType type) {
-        throw new UnsupportedOperationException("Not implemented");
+    public List<Source> getAllTemplatesByType(TemplateType type) {
+        return templateSources.stream()
+                .filter(src -> src.getType() == type)
+                .collect(Collectors.toUnmodifiableList());
     }
 
     /**
@@ -234,7 +270,7 @@ final public class GitignoreGenerator {
      * @return true if source is in list of template sources, false otherwise.
      */
     public boolean isTemplateInList(Source source) {
-        throw new UnsupportedOperationException("Not implemented");
+        return templateSources.contains(source);
     }
 
     /**
