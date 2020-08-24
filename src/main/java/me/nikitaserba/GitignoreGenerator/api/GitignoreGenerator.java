@@ -21,15 +21,14 @@
 package me.nikitaserba.GitignoreGenerator.api;
 
 import me.nikitaserba.GitignoreGenerator.api.exceptions.GitignoreSourceLoadException;
+import me.nikitaserba.GitignoreGenerator.api.exceptions.GitignoreSourceNotFoundException;
 import me.nikitaserba.GitignoreGenerator.api.sources.GitignoreSource;
 import me.nikitaserba.GitignoreGenerator.api.sources.Source;
+import me.nikitaserba.GitignoreGenerator.api.templates.GitignoreTemplate;
 import me.nikitaserba.GitignoreGenerator.api.templates.TemplateType;
 import org.reflections.Reflections;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.OutputStream;
+import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -54,6 +53,8 @@ final public class GitignoreGenerator {
     protected String headerDescription;
 
     protected boolean useCustomHeader;
+
+    protected String anotherGitignoreData;
 
     protected static final String NOTICE_RESOURCE_FILENAME = "text/app_using_notice.txt";
     protected String appUsageNotice;
@@ -154,6 +155,22 @@ final public class GitignoreGenerator {
 
     public String getHeaderDescription() {
         return headerDescription;
+    }
+
+    public boolean isUseCustomHeader() {
+        return useCustomHeader;
+    }
+
+    public void setUseCustomHeader(boolean useCustomHeader) {
+        this.useCustomHeader = useCustomHeader;
+    }
+
+    public String getAnotherGitignoreData() {
+        return anotherGitignoreData;
+    }
+
+    public void setAnotherGitignoreData(String anotherGitignoreData) {
+        this.anotherGitignoreData = anotherGitignoreData;
     }
 
     private Set<Source> allSources;
@@ -274,12 +291,83 @@ final public class GitignoreGenerator {
     }
 
     /**
+     * Generate and add header to given StringBuilder.
+     *
+     * @param gitignore StringBuilder to emplace data to.
+     */
+    protected void generateHeader(StringBuilder gitignore) {
+        if (useCustomHeader) {
+            gitignore.append(customHeader).append('\n');
+        } else {
+            if (header != null && !header.trim().isEmpty()) {
+                gitignore.append("## ").append(header.trim()).append('\n');
+            }
+            if (headerDescription != null && !headerDescription.trim().isEmpty()) {
+                gitignore.append("## ").append(headerDescription.trim()).append('\n');
+            }
+            gitignore.append(appUsageNotice).append('\n');
+        }
+    }
+
+    /**
+     * Get template by its source using right GitignoreSource.
+     *
+     * @param source source to use to get template.
+     * @return template by given source.
+     */
+    protected GitignoreTemplate getTemplateBySource(Source source) throws GitignoreSourceNotFoundException {
+        for (GitignoreSource gitignoreSource : gitignoreSources) {
+            if (gitignoreSource.getClass().equals(source.getGitignoreSource())) {
+                return gitignoreSource.parse(source);
+            }
+        }
+        throw new GitignoreSourceNotFoundException(source.getGitignoreSource().toString());
+    }
+
+    /**
+     * Get templates by their sources and add them to StringBuilder.
+     *
+     * @param gitignore StringBuilder to emplace data to.
+     */
+    protected void emplaceTemplates(StringBuilder gitignore) throws GitignoreSourceNotFoundException {
+        for (Source source : templateSources) {
+            GitignoreTemplate template = getTemplateBySource(source);
+
+            gitignore.append("\n# ").append(template.getName()).append('\n');
+            gitignore.append("# ").append(template.getSourceData()).append("\n\n");
+            gitignore.append(template.getContent()).append('\n');
+        }
+    }
+
+    /**
+     * Add custom .gitignore fields to StringBuilder.
+     *
+     * @param gitignore StringBuilder to emplace data to.
+     */
+    protected void emplaceAnotherGitignoreData(StringBuilder gitignore) throws GitignoreSourceNotFoundException {
+        if (anotherGitignoreData != null && !anotherGitignoreData.trim().isEmpty()) {
+            gitignore.append("\n# Other\n\n").append(anotherGitignoreData.trim());
+        }
+    }
+
+    /**
      * Generate final .gitignore file from templates.
      *
      * @return content of generated .gitignore.
      */
-    public String generateGitignoreFile() {
-        throw new UnsupportedOperationException("Not implemented");
+    public String generateGitignoreFile() throws GitignoreSourceNotFoundException {
+        if (useCustomHeader && customHeader == null)
+            throw new NullPointerException("useCustomHeader is set to true, but no custom header provided");
+
+        StringBuilder gitignore = new StringBuilder();
+
+        generateHeader(gitignore);
+
+        emplaceTemplates(gitignore);
+
+        emplaceAnotherGitignoreData(gitignore);
+
+        return gitignore.toString();
     }
 
     /**
@@ -288,8 +376,12 @@ final public class GitignoreGenerator {
      *
      * @param stream stream to pass result in.
      */
-    public void generateGitignoreFileToStream(OutputStream stream) {
-        throw new UnsupportedOperationException("Not implemented");
+    public void generateGitignoreFileToStream(OutputStream stream)
+            throws IOException, GitignoreSourceNotFoundException {
+        String content = generateGitignoreFile();
+        try (OutputStreamWriter streamWriter = new OutputStreamWriter(stream)) {
+            streamWriter.write(content);
+        }
     }
 
 }
