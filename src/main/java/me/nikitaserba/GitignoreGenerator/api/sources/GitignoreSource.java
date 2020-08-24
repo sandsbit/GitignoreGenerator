@@ -23,6 +23,8 @@ package me.nikitaserba.GitignoreGenerator.api.sources;
 import me.nikitaserba.GitignoreGenerator.api.templates.GitignoreTemplate;
 import me.nikitaserba.GitignoreGenerator.api.templates.TemplateType;
 
+import java.util.List;
+
 /**
  * General interface for all classes, that provide
  * .gitignore file templates.
@@ -43,7 +45,7 @@ public interface GitignoreSource {
      *
      * @return list of `Source` objects which contain all available sources.
      */
-    Source[] getAllSources();
+    List<Source> getAllSources();
 
     /**
      * Get all available sources (URLs, file paths, etc.) by given type.
@@ -51,7 +53,7 @@ public interface GitignoreSource {
      * @param type type which be used as search criteria.
      * @return array with all sources of given type.
      */
-    Source[] getSourcesByType(TemplateType type);
+    List<Source> getSourcesByType(TemplateType type);
 
     GitignoreTemplate parse(String source);
     GitignoreTemplate parse(Source source);
