@@ -21,6 +21,7 @@
 package me.nikitaserba.GitignoreGenerator.api.sources;
 
 import me.nikitaserba.GitignoreGenerator.api.templates.GitignoreTemplate;
+import me.nikitaserba.GitignoreGenerator.api.templates.TemplateType;
 
 /**
  * General interface for all classes, that provide
@@ -31,9 +32,9 @@ import me.nikitaserba.GitignoreGenerator.api.templates.GitignoreTemplate;
 public interface GitignoreSource {
 
     /**
-     * Return source name (e.g. "github/.gitignore parser" or "file template parser"
+     * Return source name (e.g. "github/.gitignore parser" or "file template parser".
      *
-     * @return full source name
+     * @return full source name.
      */
     String getName();
 
@@ -43,6 +44,14 @@ public interface GitignoreSource {
      * @return list of `Source` objects which contain all available sources.
      */
     Source[] getAllSources();
+
+    /**
+     * Get all available sources (URLs, file paths, etc.) by given type.
+     *
+     * @param type type which be used as search criteria.
+     * @return array with all sources of given type.
+     */
+    Source[] getSourcesByType(TemplateType type);
 
     GitignoreTemplate parse(String source);
     GitignoreTemplate parse(Source source);
