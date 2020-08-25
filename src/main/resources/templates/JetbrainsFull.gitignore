@@ -1,3 +1,4 @@
 # JetBrains IDE project
+# !type IDE
 .idea/
 *.iml
