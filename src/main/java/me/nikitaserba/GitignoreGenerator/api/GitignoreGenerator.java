@@ -176,7 +176,9 @@ final public class GitignoreGenerator {
     private Set<Source> allSources;
 
     /**
-     * Get all sources from all loaded .gitignore Sources
+     * Get all sources from all loaded .gitignore Sources.
+     *
+     * This method will try to use data from cache.
      *
      * @return unmodifiable set of all sources
      */
@@ -195,6 +197,8 @@ final public class GitignoreGenerator {
 
     /**
      * Get all sources with certain type from all loaded .gitignore Sources
+     *
+     * This method will try to use data from cache.
      *
      * @return unmodifiable set of all sources with given type
      */
