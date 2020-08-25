@@ -22,8 +22,16 @@ package me.nikitaserba.GitignoreGenerator.api.sources;
 
 import me.nikitaserba.GitignoreGenerator.api.templates.GitignoreTemplate;
 import me.nikitaserba.GitignoreGenerator.api.templates.TemplateType;
+import org.reflections.Reflections;
+import org.reflections.scanners.ResourcesScanner;
 
-import java.util.List;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.net.URL;
+import java.nio.file.Files;
+import java.util.*;
+import java.util.regex.Pattern;
 
 /**
  * .gitignore source that uses templates from "templates" folder in resources.
@@ -41,25 +49,14 @@ public final class FileTemplateSource implements GitignoreSource {
 
     public static final String NAME = "File template source";
 
-    // when true class will parse all files, used for unittests
+    protected static final String TEMPLATE_RESOURCES_FOLDER = "templates";  // do not include "/" at the end!
+
+    // when true class will parse all files, used for unittests; should be changes only from unittests
     protected boolean testMode = false;
 
     // empty constructor is needed for auto source finding using reflection
     public FileTemplateSource() {
-    }
-
-    /**
-     * Return instance of this source that will process all templates,
-     * including test template that begin with "_test".
-     *
-     * Should be used only in unittests.
-     *
-     * @return instance of FileTemplateSource class.
-     */
-    public static FileTemplateSource getUnittestInstance() {
-        FileTemplateSource source = new FileTemplateSource();
-        source.testMode = false;
-        return source;
+        cache = new HashMap<>();
     }
 
     @Override
@@ -67,13 +64,107 @@ public final class FileTemplateSource implements GitignoreSource {
         return NAME;
     }
 
+    Map<String, String> cache;
+
+    /**
+     * This method finds comment line in given content of .gitignore template,
+     * parses its type from this line and deleted it.
+     *
+     * e.g. it will return TemplateType.IDE for content that has "# !type IDE" line.
+     * Spaces will be ignored and line will be returned.
+     *
+     * @param content content of .gitignore template to examine.
+     * @return type parsed from content
+     */
+    protected TemplateType getTypeFromContentAndRemoveTypeNotice(StringBuilder content) {
+        String[] lines = content.toString().split("\\n");
+        for (String line : lines) {
+            if (line.trim().startsWith("#") && line.contains("!type")) {
+                int typeEnd = line.indexOf("!type") + 6;
+                String typeStr = line.substring(typeEnd).trim();
+
+                content.replace(content.indexOf(line), line.length() + 1, "");  // + 1 to delete \n too
+
+                return TemplateType.valueOf(typeStr);
+            }
+        }
+        return TemplateType.OTHER;
+    }
+
+    /**
+     * Load content of template to cache by its path form resources.
+     *
+     * Type comment will be removed (see `getTypeFromContentAndRemoveTypeNotice`).
+     *
+     * @param filepath path to template to load.
+     * @return type of that template loaded from type comment.
+     * @throws IOException if there was errors while reading template content.
+     */
+    protected TemplateType loadContentOfTemplateToCache(String filepath) throws IOException {
+        ClassLoader classLoader = FileTemplateSource.class.getClassLoader();
+
+        URL template = classLoader.getResource(filepath);
+        if (template == null)
+            throw new FileNotFoundException("Could not find template in resources: " + filepath);
+        File templateFile = new File(template.getFile());
+        String contentStr = new String(Files.readAllBytes(templateFile.toPath()));
+        StringBuilder content = new StringBuilder(contentStr);
+
+        TemplateType type = getTypeFromContentAndRemoveTypeNotice(content);
+
+        if (!cache.containsKey(filepath))
+            cache.put(filepath, content.toString());
+
+        return type;
+    }
+
+    /**
+     * Parse template source from given path to template in resources.
+     * Type will be parsed from file's !type comment.
+     *
+     * Content of parsed template will be saved in cache.
+     *
+     * @param filepath path to template in resources.
+     * @param name name of template, usually filename without extension.
+     * @return parses Source class instance for given template.
+     * @throws IOException if there was errors while reading template content.
+     */
+    protected Source parseTemplateFromFile(String filepath, String name) throws IOException {
+        return new Source(name, filepath, loadContentOfTemplateToCache(filepath), FileTemplateSource.class);
+    }
+
+    protected static final String templateFileRegex = "\\/([a-zA-Z0-9\\s_\\\\.\\-\\(\\):])+(.gitignore)$";
+
+    /**
+     * Load all templates from resources to cache and return set of their sources.
+     *
+     * @return set of Source class instances for all templates in resources.
+     * @throws IOException if there was errors while reading template contents.
+     */
+    protected Set<Source> parseAllSourcesFromResources() throws IOException {
+        assert !TEMPLATE_RESOURCES_FOLDER.endsWith("/") : "path to resource folder with templates should not ";
+
+        Reflections reflections = new Reflections("me.nikitaserba", new ResourcesScanner());
+        Pattern templateFilePattern = Pattern.compile(TEMPLATE_RESOURCES_FOLDER + templateFileRegex);
+        Set<String> templates = reflections.getResources(templateFilePattern);
+
+        Set<Source> sources = new HashSet<>();
+        for (String template : templates) {
+            sources.add(parseTemplateFromFile(
+                    TEMPLATE_RESOURCES_FOLDER + "/" + template,
+                    templateFilePattern.matcher(template).group(0)));
+        }
+
+        return sources;
+    }
+
     @Override
-    public List<Source> getAllSources() {
+    public Set<Source> getAllSources() {
         throw new UnsupportedOperationException("Not implemented.");
     }
 
     @Override
-    public List<Source> getSourcesByType(TemplateType type) {
+    public Set<Source> getSourcesByType(TemplateType type) {
         throw new UnsupportedOperationException("Not implemented.");
     }
 
