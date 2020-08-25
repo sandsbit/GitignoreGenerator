@@ -28,17 +28,43 @@ import java.util.List;
 /**
  * .gitignore source that uses templates from "templates" folder in resources.
  *
+ * Gitignore file templates that begin with "_test" will be ignored in release version.
+ * They're used in unittests.
+ *
+ * This class is final to allow java use some optimizations. This
+ * tag will be removed if it's needed to inherit any class from
+ * this class.
+ *
  * @version 1.0
  */
-public class FileTemplateSource implements GitignoreSource {
+public final class FileTemplateSource implements GitignoreSource {
+
+    public static final String NAME = "File template source";
+
+    // when true class will parse all files, used for unittests
+    protected boolean testMode = false;
 
     // empty constructor is needed for auto source finding using reflection
     public FileTemplateSource() {
     }
 
+    /**
+     * Return instance of this source that will process all templates,
+     * including test template that begin with "_test".
+     *
+     * Should be used only in unittests.
+     *
+     * @return instance of FileTemplateSource class.
+     */
+    public static FileTemplateSource getUnittestInstance() {
+        FileTemplateSource source = new FileTemplateSource();
+        source.testMode = false;
+        return source;
+    }
+
     @Override
     public String getName() {
-        throw new UnsupportedOperationException("Not implemented.");
+        return NAME;
     }
 
     @Override
