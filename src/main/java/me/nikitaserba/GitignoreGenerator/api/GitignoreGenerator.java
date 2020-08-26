@@ -22,6 +22,7 @@ package me.nikitaserba.GitignoreGenerator.api;
 
 import me.nikitaserba.GitignoreGenerator.api.exceptions.GitignoreSourceLoadException;
 import me.nikitaserba.GitignoreGenerator.api.exceptions.GitignoreSourceNotFoundException;
+import me.nikitaserba.GitignoreGenerator.api.exceptions.TemplateParsingException;
 import me.nikitaserba.GitignoreGenerator.api.sources.GitignoreSource;
 import me.nikitaserba.GitignoreGenerator.api.sources.Source;
 import me.nikitaserba.GitignoreGenerator.api.templates.GitignoreTemplate;
@@ -182,7 +183,7 @@ final public class GitignoreGenerator {
      *
      * @return unmodifiable set of all sources
      */
-    public Set<Source> getAllSources() {
+    public Set<Source> getAllSources() throws TemplateParsingException {
         if (allSources != null)
             return Collections.unmodifiableSet(allSources);
 
@@ -202,7 +203,7 @@ final public class GitignoreGenerator {
      *
      * @return unmodifiable set of all sources with given type
      */
-    public Set<Source> getAllSourcesByType(TemplateType type) {
+    public Set<Source> getAllSourcesByType(TemplateType type) throws TemplateParsingException {
         if (allSourcesByType != null && allSourcesByType.containsKey(type))
             return Collections.unmodifiableSet(allSourcesByType.get(type));
 
