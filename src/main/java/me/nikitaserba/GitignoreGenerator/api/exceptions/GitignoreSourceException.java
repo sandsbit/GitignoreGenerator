@@ -21,29 +21,26 @@
 package me.nikitaserba.GitignoreGenerator.api.exceptions;
 
 /**
- * This exception is thrown if app couldn't find GitignoreSource
- * for given Source class instance.
- *
- * @version 1.0
+ * Base class for all GitignoreSource exceptions.
  */
-public class GitignoreSourceNotFoundException extends GitignoreSourceException {
-    public GitignoreSourceNotFoundException() {
+public class GitignoreSourceException extends GitignoreGeneratorException {
+    public GitignoreSourceException() {
         super();
     }
 
-    public GitignoreSourceNotFoundException(String message) {
+    public GitignoreSourceException(String message) {
         super(message);
     }
 
-    public GitignoreSourceNotFoundException(String message, Throwable cause) {
+    public GitignoreSourceException(String message, Throwable cause) {
         super(message, cause);
     }
 
-    public GitignoreSourceNotFoundException(Throwable cause) {
+    public GitignoreSourceException(Throwable cause) {
         super(cause);
     }
 
-    protected GitignoreSourceNotFoundException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
+    protected GitignoreSourceException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
         super(message, cause, enableSuppression, writableStackTrace);
     }
 }

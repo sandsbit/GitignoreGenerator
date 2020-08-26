@@ -20,7 +20,13 @@
 
 package me.nikitaserba.GitignoreGenerator.api.exceptions;
 
-public class GitignoreSourceLoadException extends Exception {
+/**
+ * Exception that is thrown on error while loading GitignoreSource
+ * using reflection.
+ *
+ * @version 1.0
+ */
+public class GitignoreSourceLoadException extends GitignoreSourceException {
     public GitignoreSourceLoadException() {
         super();
     }

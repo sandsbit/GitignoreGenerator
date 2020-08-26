@@ -20,7 +20,13 @@
 
 package me.nikitaserba.GitignoreGenerator.api.exceptions;
 
-public class TemplateParsingException extends Exception {
+/**
+ * This exception if thrown in GitignoreSource classes if there are some
+ * errors while parsing gitignore template.
+ *
+ * @version 1.0
+ */
+public class TemplateParsingException extends GitignoreGeneratorException {
     public TemplateParsingException() {
         super();
     }
