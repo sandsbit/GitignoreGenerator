@@ -20,6 +20,7 @@
 
 package me.nikitaserba.GitignoreGenerator.api.sources;
 
+import me.nikitaserba.GitignoreGenerator.api.exceptions.TemplateParsingException;
 import me.nikitaserba.GitignoreGenerator.api.templates.GitignoreTemplate;
 import me.nikitaserba.GitignoreGenerator.api.templates.TemplateType;
 
@@ -45,7 +46,7 @@ public interface GitignoreSource {
      *
      * @return set of `Source` objects which contain all available sources.
      */
-    Set<Source> getAllSources();
+    Set<Source> getAllSources() throws TemplateParsingException;
 
     /**
      * Get all available sources (URLs, file paths, etc.) by given type.
@@ -53,7 +54,7 @@ public interface GitignoreSource {
      * @param type type which be used as search criteria.
      * @return set with all sources of given type.
      */
-    Set<Source> getSourcesByType(TemplateType type);
+    Set<Source> getSourcesByType(TemplateType type) throws TemplateParsingException;
 
     GitignoreTemplate parse(String source);
     GitignoreTemplate parse(Source source);

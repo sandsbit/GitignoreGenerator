@@ -20,6 +20,7 @@
 
 package me.nikitaserba.GitignoreGenerator.api.sources;
 
+import me.nikitaserba.GitignoreGenerator.api.exceptions.TemplateParsingException;
 import me.nikitaserba.GitignoreGenerator.api.templates.GitignoreTemplate;
 import me.nikitaserba.GitignoreGenerator.api.templates.TemplateType;
 import org.reflections.Reflections;
@@ -32,6 +33,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.util.*;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * .gitignore source that uses templates from "templates" folder in resources.
@@ -158,14 +160,57 @@ public final class FileTemplateSource implements GitignoreSource {
         return sources;
     }
 
+    Set<Source> allSourcesCache;
+
+    /**
+     * Get all Source class instances for all templates in resources.
+     *
+     * Templates content will be stored in cache.
+     *
+     * @return unmodifiable set of all sources for all templates in resources.
+     * @throws TemplateParsingException if there was IOException while loading templates.
+     */
     @Override
-    public Set<Source> getAllSources() {
-        throw new UnsupportedOperationException("Not implemented.");
+    public Set<Source> getAllSources() throws TemplateParsingException {
+        if (allSourcesCache != null)
+            return Collections.unmodifiableSet(allSourcesCache);
+
+        try {
+            allSourcesCache = parseAllSourcesFromResources();
+            return Collections.unmodifiableSet(allSourcesCache);
+        } catch (IOException e) {
+            throw new TemplateParsingException("Could not load template: " + e, e);
+        }
     }
 
+    Map<TemplateType, Set<Source>> sourcesByTypeCache;
+
+    /**
+     * Get all Source class instances for all templates with certain type in resources.
+     *
+     * Templates content will be stored in cache.
+     *
+     * @param type type which be used as search criteria.
+     * @return unmodifiable set of all sources for all templates with given type in resources.
+     * @throws TemplateParsingException if there was TemplateParsingException while loading all sources.
+     */
     @Override
-    public Set<Source> getSourcesByType(TemplateType type) {
-        throw new UnsupportedOperationException("Not implemented.");
+    public Set<Source> getSourcesByType(TemplateType type) throws TemplateParsingException {
+        if (sourcesByTypeCache != null && sourcesByTypeCache.containsKey(type))
+            return Collections.unmodifiableSet(sourcesByTypeCache.get(type));
+
+        if (allSourcesCache == null)
+            getAllSources();  // load them to cache
+
+        if (sourcesByTypeCache == null)
+            sourcesByTypeCache = new EnumMap<>(TemplateType.class);
+
+        Set<Source> sourcesByGivenType = allSourcesCache.stream()
+                .filter(source -> source.getType() == type)
+                .collect(Collectors.toSet());
+        sourcesByTypeCache.put(type, sourcesByGivenType);
+
+        return Collections.unmodifiableSet(sourcesByGivenType);
     }
 
     @Override
