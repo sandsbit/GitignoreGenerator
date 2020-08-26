@@ -174,7 +174,7 @@ final public class GitignoreGenerator {
         this.anotherGitignoreData = anotherGitignoreData;
     }
 
-    private Set<Source> allSources;
+    private Set<Source> allSourcesCache;
 
     /**
      * Get all sources from all loaded .gitignore Sources.
@@ -184,17 +184,17 @@ final public class GitignoreGenerator {
      * @return unmodifiable set of all sources
      */
     public Set<Source> getAllSources() throws TemplateParsingException {
-        if (allSources != null)
-            return Collections.unmodifiableSet(allSources);
+        if (allSourcesCache != null)
+            return Collections.unmodifiableSet(allSourcesCache);
 
-        allSources = new HashSet<>();
+        allSourcesCache = new HashSet<>();
         for (GitignoreSource gitignoreSource : gitignoreSources) {
-            allSources.addAll(gitignoreSource.getAllSources());
+            allSourcesCache.addAll(gitignoreSource.getAllSources());
         }
-        return Collections.unmodifiableSet(allSources);
+        return Collections.unmodifiableSet(allSourcesCache);
     }
 
-    private Map<TemplateType, Set<Source>> allSourcesByType;
+    private Map<TemplateType, Set<Source>> allSourcesByTypeCache;
 
     /**
      * Get all sources with certain type from all loaded .gitignore Sources
@@ -204,17 +204,17 @@ final public class GitignoreGenerator {
      * @return unmodifiable set of all sources with given type
      */
     public Set<Source> getAllSourcesByType(TemplateType type) throws TemplateParsingException {
-        if (allSourcesByType != null && allSourcesByType.containsKey(type))
-            return Collections.unmodifiableSet(allSourcesByType.get(type));
+        if (allSourcesByTypeCache != null && allSourcesByTypeCache.containsKey(type))
+            return Collections.unmodifiableSet(allSourcesByTypeCache.get(type));
 
-        if (allSources != null) {
-            if (allSourcesByType == null)
-                allSourcesByType = new EnumMap<>(TemplateType.class);
+        if (allSourcesCache != null) {
+            if (allSourcesByTypeCache == null)
+                allSourcesByTypeCache = new EnumMap<>(TemplateType.class);
 
-            Set<Source> sourcesByGivenType = allSources.stream()
+            Set<Source> sourcesByGivenType = allSourcesCache.stream()
                     .filter(src -> src.getType() == type)
                     .collect(Collectors.toSet());
-            allSourcesByType.put(type, sourcesByGivenType);
+            allSourcesByTypeCache.put(type, sourcesByGivenType);
 
             return Collections.unmodifiableSet(sourcesByGivenType);
         }
