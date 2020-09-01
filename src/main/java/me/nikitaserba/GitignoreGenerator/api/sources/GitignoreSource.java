@@ -56,8 +56,7 @@ public interface GitignoreSource {
      */
     Set<Source> getSourcesByType(TemplateType type) throws TemplateParsingException;
 
-    GitignoreTemplate parse(String source);
-    GitignoreTemplate parse(Source source);
-    GitignoreTemplate[] parseAll();
+    GitignoreTemplate parse(Source source) throws TemplateParsingException;
+    Set<GitignoreTemplate> parseAll() throws TemplateParsingException;
 
 }
