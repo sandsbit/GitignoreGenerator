@@ -66,7 +66,7 @@ public final class FileTemplateSource implements GitignoreSource {
         return NAME;
     }
 
-    Map<String, String> cache;
+    Map<String, Map.Entry<Source, String>> cache;
 
     /**
      * This method finds comment line in given content of .gitignore template,
@@ -94,33 +94,6 @@ public final class FileTemplateSource implements GitignoreSource {
     }
 
     /**
-     * Load content of template to cache by its path form resources.
-     *
-     * Type comment will be removed (see `getTypeFromContentAndRemoveTypeNotice`).
-     *
-     * @param filepath path to template to load.
-     * @return type of that template loaded from type comment.
-     * @throws IOException if there was errors while reading template content.
-     */
-    protected TemplateType loadContentOfTemplateToCache(String filepath) throws IOException {
-        ClassLoader classLoader = FileTemplateSource.class.getClassLoader();
-
-        URL template = classLoader.getResource(filepath);
-        if (template == null)
-            throw new FileNotFoundException("Could not find template in resources: " + filepath);
-        File templateFile = new File(template.getFile());
-        String contentStr = new String(Files.readAllBytes(templateFile.toPath()));
-        StringBuilder content = new StringBuilder(contentStr);
-
-        TemplateType type = getTypeFromContentAndRemoveTypeNotice(content);
-
-        if (!cache.containsKey(filepath))
-            cache.put(filepath, content.toString());
-
-        return type;
-    }
-
-    /**
      * Parse template source from given path to template in resources.
      * Type will be parsed from file's !type comment.
      *
@@ -131,8 +104,26 @@ public final class FileTemplateSource implements GitignoreSource {
      * @return parses Source class instance for given template.
      * @throws IOException if there was errors while reading template content.
      */
-    protected Source parseTemplateFromFile(String filepath, String name) throws IOException {
-        return new Source(name, filepath, loadContentOfTemplateToCache(filepath), FileTemplateSource.class);
+    protected Source parseTemplateFromFileAndLoadContentToCache(String filepath, String name) throws IOException {
+        if (cache.containsKey(filepath))
+            return cache.get(filepath).getKey();
+        else {
+            Source src = new Source(name, filepath, TemplateType.OTHER, FileTemplateSource.class);
+            ClassLoader classLoader = FileTemplateSource.class.getClassLoader();
+
+            URL template = classLoader.getResource(filepath);
+            if (template == null)
+                throw new FileNotFoundException("Could not find template in resources: " + filepath);
+            File templateFile = new File(template.getFile());
+            String contentStr = new String(Files.readAllBytes(templateFile.toPath()));
+            StringBuilder content = new StringBuilder(contentStr);
+
+            src.type = getTypeFromContentAndRemoveTypeNotice(content);
+
+            cache.put(filepath, Map.entry(src, content.toString()));
+
+            return src;
+        }
     }
 
     protected static final String templateFileRegex = "\\/([a-zA-Z0-9\\s_\\\\.\\-\\(\\):])+(.gitignore)$";
@@ -152,7 +143,7 @@ public final class FileTemplateSource implements GitignoreSource {
 
         Set<Source> sources = new HashSet<>();
         for (String template : templates) {
-            sources.add(parseTemplateFromFile(
+            sources.add(parseTemplateFromFileAndLoadContentToCache(
                     TEMPLATE_RESOURCES_FOLDER + "/" + template,
                     templateFilePattern.matcher(template).group(0)));
         }
@@ -213,18 +204,43 @@ public final class FileTemplateSource implements GitignoreSource {
         return Collections.unmodifiableSet(sourcesByGivenType);
     }
 
-    @Override
-    public GitignoreTemplate parse(String source) {
-        throw new UnsupportedOperationException("Not implemented.");
+    protected static GitignoreTemplate buildTemplateByContent(Source source, String content) {
+        return new GitignoreTemplate(source.name, source.type, source.data, content);
     }
 
     @Override
-    public GitignoreTemplate parse(Source source) {
-        throw new UnsupportedOperationException("Not implemented.");
+    public GitignoreTemplate parse(Source source) throws TemplateParsingException {
+        if (allSourcesCache == null || !cache.containsKey(source.data)) {
+            try {
+                parseTemplateFromFileAndLoadContentToCache(source.data, source.name);
+            } catch (IOException e) {
+                throw new TemplateParsingException(e.getMessage(), e);
+            }
+        }
+
+        assert cache.containsKey(source.data) : "loadContentOfTemplateToCache did not loaded content to cache" +
+                " but exited normaly";
+
+        Map.Entry<Source, String> dataFromCache = cache.get(source.data);
+        return buildTemplateByContent(dataFromCache.getKey(), dataFromCache.getValue());
     }
 
+    /**
+     * Parse all templates from resources using parse() method.
+     *
+     * @return Unmodifiable set with all templates from resources
+     * @throws TemplateParsingException if there was errors while parsing templates
+     */
     @Override
-    public GitignoreTemplate[] parseAll() {
-        throw new UnsupportedOperationException("Not implemented.");
+    public Set<GitignoreTemplate> parseAll() throws TemplateParsingException {
+        if (cache == null)
+            getAllSources(); // load all to cache
+        
+        Set<GitignoreTemplate> templates = new HashSet<>();
+        for (Map.Entry<String, Map.Entry<Source, String>> contentInCache : cache.entrySet()) {
+            templates.add(parse(contentInCache.getValue().getKey()));
+        }
+
+        return Collections.unmodifiableSet(templates);
     }
 }
