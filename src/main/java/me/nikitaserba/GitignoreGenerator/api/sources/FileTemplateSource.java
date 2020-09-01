@@ -53,9 +53,6 @@ public final class FileTemplateSource implements GitignoreSource {
 
     protected static final String TEMPLATE_RESOURCES_FOLDER = "templates";  // do not include "/" at the end!
 
-    // when true class will parse all files, used for unittests; should be changes only from unittests
-    protected boolean testMode = false;
-
     // empty constructor is needed for auto source finding using reflection
     public FileTemplateSource() {
         cache = new HashMap<>();
