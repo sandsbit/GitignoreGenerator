@@ -38,9 +38,6 @@ import java.util.stream.Collectors;
 /**
  * .gitignore source that uses templates from "templates" folder in resources.
  *
- * Gitignore file templates that begin with "_test" will be ignored in release version.
- * They're used in unittests.
- *
  * This class is final to allow java use some optimizations. This
  * tag will be removed if it's needed to inherit any class from
  * this class.
