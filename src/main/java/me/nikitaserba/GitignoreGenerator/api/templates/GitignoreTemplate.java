@@ -38,16 +38,14 @@ public final class GitignoreTemplate {
 
     protected String name; // e.g. "Windows", "C/C++" or "JetBrains"
     protected TemplateType type;
-    protected GitignoreSource source;
     protected String sourceData;  // data source which was used GitignoreSource class (url, file path, etc.)
 
     protected String gitignoreContent;
 
-    public GitignoreTemplate(String name, TemplateType type, GitignoreSource source,
+    public GitignoreTemplate(String name, TemplateType type,
                              String sourceData, String gitignoreContent) {
         this.name = name;
         this.type = type;
-        this.source = source;
         this.sourceData = sourceData;
         this.gitignoreContent = gitignoreContent;
     }
@@ -58,10 +56,6 @@ public final class GitignoreTemplate {
 
     public TemplateType getType() {
         return type;
-    }
-
-    public GitignoreSource getSource() {
-        return source;
     }
 
     public String getSourceData() {
