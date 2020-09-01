@@ -1,0 +1,7 @@
+{
+  "OS": ["macOS", "Windows"],
+  "PROGRAMMING_LANGUAGE": ["C", "C++", "Java"],
+  "LIBRARY": ["CUDA", "Drupal"],
+  "UTILITY": ["Unity", "UnrealEngine"],
+  "IDE": ["JetBrains", "Xcode", "vim"]
+}
